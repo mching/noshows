@@ -14,35 +14,38 @@ names(appts)
 # Convert Dates and Times into POSIXct class
 ######
 
-# head(appts$Timestamp)
+head(appts$Timestamp)
 appts$TimestampP <- strptime(appts$Timestamp, "%m/%d/%Y %H:%M:%S")
-# summary(appts$TimestampP)
+summary(appts$TimestampP)
 
-# head(appts$Date.of.Consult.Request)
+head(appts$Date.of.Consult.Request)
 appts$Date.of.Consult.Request.P <- strptime(appts$Date.of.Consult.Request, "%m/%d/%Y")
 appts$Date.of.Consult.Request.P <- as.POSIXct(appts$Date.of.Consult.Request.P)
-# summary(appts$Date.of.Consult.Request.P) # some are past today's date of 1 May 2014
-# which(appts$Date.of.Consult.Request.P > as.POSIXct("2014-05-01"))
+summary(appts$Date.of.Consult.Request.P) 
+
+# some are past today's date of 1 May 2014, most likely by 1 or 2 years
+which(appts$Date.of.Consult.Request.P > as.POSIXct("2014-05-01"))
+
 # subtract off the number of seconds in a year or two depending on how much off
 appts$Date.of.Consult.Request.P[c(51, 54, 96)] <- appts$Date.of.Consult.Request.P[c(51, 54, 96)] - 365*24*60*60 
 appts$Date.of.Consult.Request.P[c(96)] <- appts$Date.of.Consult.Request.P[c(96)] - 365*24*60*60 
-# summary(appts$Date.of.Consult.Request.P)
-# head(appts$Date.of.Consult.Request.P)
+summary(appts$Date.of.Consult.Request.P)
+head(appts$Date.of.Consult.Request.P)
 
-# head(appts$Date.and.Time.of.Scheduling)
+head(appts$Date.and.Time.of.Scheduling)
 appts$Date.and.Time.of.Scheduling.P <- strptime(appts$Date.and.Time.of.Scheduling, "%m/%d/%Y %H:%M:%S")
 appts$Date.and.Time.of.Scheduling.P <- as.POSIXct(appts$Date.and.Time.of.Scheduling.P)
-# summary(appts$Date.and.Time.of.Scheduling.P) # Ensure that none are past today
-# head(appts$Date.and.Time.of.Scheduling.P)
+summary(appts$Date.and.Time.of.Scheduling.P) # Ensure that none are past today
+head(appts$Date.and.Time.of.Scheduling.P)
 
-# head(appts$Date.and.Time.of.Appointment)
+head(appts$Date.and.Time.of.Appointment)
 appts$Date.and.Time.of.Appointment.P <- strptime(appts$Date.and.Time.of.Appointment, "%m/%d/%Y %H:%M:%S")
 appts$Date.and.Time.of.Appointment.P <- as.POSIXct(appts$Date.and.Time.of.Appointment.P)
-# summary(appts$Date.and.Time.of.Appointment.P) # Some are past May 1, 2014
+summary(appts$Date.and.Time.of.Appointment.P) # Some are past May 1, 2014
 offdate <- which(appts$Date.and.Time.of.Appointment.P > as.POSIXct("2014-05-01"))
 appts$Date.and.Time.of.Appointment.P[offdate] <- appts$Date.and.Time.of.Appointment.P[offdate] - 365*24*60*60
-# summary(appts$Date.and.Time.of.Appointment.P) # Some are past May 1, 2014
-# head(appts$Date.and.Time.of.Appointment.P)
+summary(appts$Date.and.Time.of.Appointment.P) # Some are past May 1, 2014
+head(appts$Date.and.Time.of.Appointment.P)
 
 # Make variable for time from request to time of scheduling
 appts$Days.Request.to.Scheduling <- difftime(appts$Date.and.Time.of.Scheduling.P, appts$Date.of.Consult.Request.P, units = "days")
@@ -63,6 +66,11 @@ appts$Days.Scheduling.to.Appointment <- difftime(appts$Date.and.Time.of.Appointm
 which(appts$Days.Scheduling.to.Appointment < 0)
 # TODO troubleshoot record 34 and 141. Why is it negative -18 days?
 appts$Days.Scheduling.to.Appointment[c(34, 141)]
+
+# Reorganize the levels for Day of the Week
+appts$ApptWeekday <- appts$Day.of.the.Week.of.Appointment
+appts$ApptWeekday <- factor(appts$ApptWeekday, levels(appts$ApptWeekday)[c(2, 4, 5, 3, 1)])
+summary(appts$ApptWeekday)
 
 ######
 # Perform sanity checks on other variables (in range? unusual responses?)
