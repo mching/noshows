@@ -67,7 +67,7 @@ which(appts$Days.Scheduling.to.Appointment < 0)
 # TODO troubleshoot record 34 and 141. Why is it negative -18 days?
 appts$Days.Scheduling.to.Appointment[c(34, 141)]
 
-# Reorganize the levels for Day of the Week
+# Reorganize the levels for Day of the Week because they are created as alphabetical
 appts$ApptWeekday <- appts$Day.of.the.Week.of.Appointment
 appts$ApptWeekday <- factor(appts$ApptWeekday, levels(appts$ApptWeekday)[c(2, 4, 5, 3, 1)])
 summary(appts$ApptWeekday)
@@ -77,15 +77,15 @@ summary(appts$ApptWeekday)
 ######
 
 # Make patient canceled appointments into NAs and refactor to drop Patient Cancels
-# summary(appts$Appointment.Missed.or.Kept.)
+summary(appts$Appointment.Missed.or.Kept.)
 appts$Appointment.NoShow <- appts$Appointment.Missed.or.Kept.
 appts$Appointment.NoShow[which(appts$Appointment.Missed.or.Kept. == "Patient Canceled")] <- NA
 appts$Appointment.NoShow <- factor(appts$Appointment.NoShow)
-# table(appts$Appointment.NoShow, appts$Appointment.Missed.or.Kept., useNA = "if")
+table(appts$Appointment.NoShow, appts$Appointment.Missed.or.Kept., useNA = "if")
 
 ## Reason for appointment
 
-# table(appts[8])
+table(appts[8])
 # I will have to recode most of these to fit into a few categories...
 appts$Reason <- rep("Other", times = length(appts[, 1]))
 appts$Reason[appts[8] == "Autism" | appts[8] == "Pervasive Developmental Disorder"] <- "ASD"
@@ -97,9 +97,9 @@ appts$Reason[appts[8] == "Baseline Assessment" |
                appts[8] == "Developmental Delay-Motor" |
                appts[8] == "Mental Retardation" |
                appts[8] == "Other Developmental Delay"] <- "Other Delay"
-# WE should look to make a global delay variable
-# table(appts$Reason)
-# prop.table(table(appts$Reason))
+# We should look to make a global delay variable
+table(appts$Reason)
+prop.table(table(appts$Reason))
 
 table(appts$Reason2)
 table(appts[[8]], appts$Reason2 == " Autism") # The overlap is only with speech delay
@@ -111,7 +111,7 @@ str(appts$Reminder.call.made.)
 appts$Reminded <- appts$Reminder.call.made. 
 appts$Reminded[appts$Reminded == "" | appts$Reminded == "Unknown"] <- NA
 appts$Reminded <- factor(appts$Reminded) # drop blank factor
-# summary(appts$Reminded)
+summary(appts$Reminded)
 
 ## Age in months
 summary(appts$Age) 
@@ -135,7 +135,7 @@ table(appts$POCreformat)
 
 # need to be consolidated into:
 
-# Family vs Peds
+## Family vs Peds
 appts$Peds.FP <- appts$POCreformat
 # All that start with N into NA
 appts$Peds.FP[grep("^N", appts$Peds.FP)] <- NA
@@ -152,7 +152,7 @@ appts$Peds.FP[grep("PED", appts$Peds.FP)] <- "peds"
 appts$Peds.FP <- factor(appts$Peds.FP)
 summary(appts$Peds.FP)
 
-# Schofield, Makalapa, KBay, WOMH, TAMC
+## Schofield, Makalapa, KBay, WOMH, TAMC
 appts$clinic <- appts$POCreformat
 # All that start with N into NA
 appts$clinic[grep("^N", appts$clinic)] <- NA
