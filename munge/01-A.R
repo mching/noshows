@@ -8,7 +8,8 @@
 ###########################
 
 names(appts)
-
+appts <- appts2
+rm(appts2)
 
 ######
 # Convert Dates and Times into POSIXct class
@@ -23,49 +24,56 @@ appts$Date.of.Consult.Request.P <- strptime(appts$Date.of.Consult.Request, "%m/%
 appts$Date.of.Consult.Request.P <- as.POSIXct(appts$Date.of.Consult.Request.P)
 summary(appts$Date.of.Consult.Request.P) 
 
-# some are past today's date of 1 May 2014, most likely by 1 or 2 years
-which(appts$Date.of.Consult.Request.P > as.POSIXct("2014-05-01"))
+# some are past 30 Sep 2014 (Pua's last day), most likely by 1 or 2 years
+wrong_dates <- which(appts$Date.of.Consult.Request.P > as.POSIXct("2014-09-30"))
+appts$Date.of.Consult.Request.P[wrong_dates]
 
 # subtract off the number of seconds in a year or two depending on how much off
-appts$Date.of.Consult.Request.P[c(51, 54, 96)] <- appts$Date.of.Consult.Request.P[c(51, 54, 96)] - 365*24*60*60 
-appts$Date.of.Consult.Request.P[c(96)] <- appts$Date.of.Consult.Request.P[c(96)] - 365*24*60*60 
+appts$Date.of.Consult.Request.P[c(51, 54, 96)] <- 
+  appts$Date.of.Consult.Request.P[c(51, 54, 96)] - 365*24*60*60 
+appts$Date.of.Consult.Request.P[c(96)] <- 
+  appts$Date.of.Consult.Request.P[c(96)] - 365*24*60*60 
 summary(appts$Date.of.Consult.Request.P)
 head(appts$Date.of.Consult.Request.P)
 
 head(appts$Date.and.Time.of.Scheduling)
 appts$Date.and.Time.of.Scheduling.P <- strptime(appts$Date.and.Time.of.Scheduling, "%m/%d/%Y %H:%M:%S")
 appts$Date.and.Time.of.Scheduling.P <- as.POSIXct(appts$Date.and.Time.of.Scheduling.P)
-summary(appts$Date.and.Time.of.Scheduling.P) # Ensure that none are past today
+summary(appts$Date.and.Time.of.Scheduling.P) # Ensure that none are past 30 Sep 2014
 head(appts$Date.and.Time.of.Scheduling.P)
 
 head(appts$Date.and.Time.of.Appointment)
 appts$Date.and.Time.of.Appointment.P <- strptime(appts$Date.and.Time.of.Appointment, "%m/%d/%Y %H:%M:%S")
 appts$Date.and.Time.of.Appointment.P <- as.POSIXct(appts$Date.and.Time.of.Appointment.P)
-summary(appts$Date.and.Time.of.Appointment.P) # Some are past May 1, 2014
-offdate <- which(appts$Date.and.Time.of.Appointment.P > as.POSIXct("2014-05-01"))
+summary(appts$Date.and.Time.of.Appointment.P) # Some are past 30 Sep 2014
+offdate <- which(appts$Date.and.Time.of.Appointment.P > as.POSIXct("2014-10-02"))
+appts$Date.and.Time.of.Appointment.P[offdate]
 appts$Date.and.Time.of.Appointment.P[offdate] <- appts$Date.and.Time.of.Appointment.P[offdate] - 365*24*60*60
-summary(appts$Date.and.Time.of.Appointment.P) # Some are past May 1, 2014
+summary(appts$Date.and.Time.of.Appointment.P) # Some are past 30 Sep 2014
 head(appts$Date.and.Time.of.Appointment.P)
 
 # Make variable for time from request to time of scheduling
 appts$Days.Request.to.Scheduling <- difftime(appts$Date.and.Time.of.Scheduling.P, appts$Date.of.Consult.Request.P, units = "days")
 # Nothing should be negative
 which(appts$Days.Request.to.Scheduling < 0)
-# TODO troubleshoot record 4. Why is it negative 102 days?
+# TODO troubleshoot record 4 and 218. For now, make NA
+appts$Days.Request.to.Scheduling[which(appts$Days.Request.to.Scheduling < 0)] <- NA
 
 # Make variable for difference between date of appointment and date of consult request
 appts$Days.Request.to.Appointment <- difftime(appts$Date.and.Time.of.Appointment.P, appts$Date.of.Consult.Request.P, units = "days")
 # Nothing should be negative
 which(appts$Days.Request.to.Appointment < 0)
-# appts$Date.and.Time.of.Appointment.P[34]
-# appts$Date.of.Consult.Request.P[34]
-# TODO troubleshoot record 34. Why is it negative -18 days?
+appts$Days.Request.to.Appointment[which(appts$Days.Request.to.Appointment < 0)]
+# TODO troubleshoot record 34 and 218. For now make NA
+appts$Days.Request.to.Appointment[which(appts$Days.Request.to.Appointment < 0)] <- NA
 
 # Make variable for time from scheduling to appointment
 appts$Days.Scheduling.to.Appointment <- difftime(appts$Date.and.Time.of.Appointment.P, appts$Date.and.Time.of.Scheduling.P, units = "days")
 which(appts$Days.Scheduling.to.Appointment < 0)
-# TODO troubleshoot record 34 and 141. Why is it negative -18 days?
-appts$Days.Scheduling.to.Appointment[c(34, 141)]
+# TODO troubleshoot record 34 and 141 and 232. Why is it negative -18 days?
+appts$Days.Scheduling.to.Appointment[which(appts$Days.Scheduling.to.Appointment < 0)]
+# Make NA for now
+appts$Days.Scheduling.to.Appointment[which(appts$Days.Scheduling.to.Appointment < 0)] <- NA
 
 # Reorganize the levels for Day of the Week because they are created as alphabetical
 appts$ApptWeekday <- appts$Day.of.the.Week.of.Appointment
@@ -87,28 +95,64 @@ table(appts$Appointment.NoShow, appts$Appointment.Missed.or.Kept., useNA = "if")
 
 table(appts[8])
 # I will have to recode most of these to fit into a few categories...
-appts$Reason <- rep("Other", times = length(appts[, 1]))
-appts$Reason[appts[8] == "Autism" | appts[8] == "Pervasive Developmental Disorder"] <- "ASD"
-appts$Reason[appts[8] == "ADHD"] <- "ADHD"
-appts$Reason[appts[8] == "Developmental Delay-Speech"] <- "Developmental Delay-Speech"
-appts$Reason[appts[8] == "Baseline Assessment" | 
-               appts[8] == "Baseline Developmental Assessment" |
-               appts[8] == "Delayed Milestones" |
-               appts[8] == "Developmental Delay-Motor" |
-               appts[8] == "Mental Retardation" |
-               appts[8] == "Other Developmental Delay"] <- "Other Delay"
-# We should look to make a global delay variable
-table(appts$Reason)
-prop.table(table(appts$Reason))
+# appts$Reason <- rep("Other", times = length(appts[, 1]))
+# appts$Reason[appts[8] == "Autism" | appts[8] == "Pervasive Developmental Disorder"] <- "ASD"
+# appts$Reason[appts[8] == "ADHD"] <- "ADHD"
+# appts$Reason[appts[8] == "Developmental Delay-Speech"] <- "Developmental Delay-Speech"
+# appts$Reason[appts[8] == "Baseline Assessment" | 
+#                appts[8] == "Baseline Developmental Assessment" |
+#                appts[8] == "Delayed Milestones" |
+#                appts[8] == "Developmental Delay-Motor" |
+#                appts[8] == "Mental Retardation" |
+#                appts[8] == "Other Developmental Delay"] <- "Other Delay"
+# table(appts$Reason)
+# prop.table(table(appts$Reason))
 
-table(appts$Reason2)
-table(appts[[8]], appts$Reason2 == " Autism") # The overlap is only with speech delay
-table(appts[[8]], appts$Reason2 == " Behavior issue (not ADHD)") # Overlap is half with speech delay
+# Create ASD, ADHD, Speech, Academic/LD, Motor, Behavior (Not ADHD), Medical, variables
+# Create ASD, ADHD, Speech, Academic/LD, Motor, Behavior (Not ADHD), Medical, variables
+
+x <- appts[, 8]
+appts$Reason_ASD <- rep(0, length(x))
+appts$Reason_ASD[grep("[Aa]utis", x)] <- 1
+appts$Reason_ASD[grep("Pervasive", x)] <- 1
+
+x <- sub("ADHD)", "ADD)", x)
+appts$Reason_ADHD <- rep(0, length(x))
+appts$Reason_ADHD[grep("ADHD", x)] <- 1
+
+appts$Reason_speech <- rep(0, length(x))
+appts$Reason_speech[grep("Speech", x)] <- 1
+
+appts$Reason_motor <- rep(0, length(x))
+appts$Reason_motor[grep("Motor", x)] <- 1
+
+appts$Reason_academic_ld <- rep(0, length(x))
+appts$Reason_academic_ld[grep("Academic | Learning", x)] <- 1
+
+appts$Reason_medical <- rep(0, length(x))
+appts$Reason_medical[grep("Medical", x)] <- 1
+
+appts$Reason_other_delay <- rep(0, length(x))
+appts$Reason_other_delay[grep("Other Dev", x)] <- 1
+
+appts$Reason_other_behavior <- rep(0, length(x))
+appts$Reason_other_behavior[setdiff(grep("Behavior", x), 
+                                    grep("ADHD", x))] <- 1
+
+appts$Reason_other_unspec <- rep(0, length(x))
+appts$Reason_other_unspec[which(rowSums(reasons) == 0)] <- 1
+
+rm(x)
+
+# reasons <- appts[, 26:34]
+# rowSums(reasons)
+# table(rowSums(reasons))
 
 ## Reminder call
 str(appts$Reminder.call.made.)
+
 # Blanks become NAs
-appts$Reminded <- appts$Reminder.call.made. 
+appts$Reminded <- appts$Reminder.call.made.
 appts$Reminded[appts$Reminded == "" | appts$Reminded == "Unknown"] <- NA
 appts$Reminded <- factor(appts$Reminded) # drop blank factor
 summary(appts$Reminded)
@@ -149,6 +193,7 @@ appts$Peds.FP[grep("HF", appts$Peds.FP)] <- "family"
 appts$Peds.FP[grep("FAMILY", appts$Peds.FP)] <- "family"
 # Pediatrics to Pediatrics
 appts$Peds.FP[grep("PED", appts$Peds.FP)] <- "peds"
+## TODO Continue recoding to peds or family
 appts$Peds.FP <- factor(appts$Peds.FP)
 summary(appts$Peds.FP)
 
@@ -179,6 +224,7 @@ appts$clinic[grep("GECKO$", appts$clinic)] <- "schofield"
 # HONU to TAMC
 appts$clinic[grep("HONU$", appts$clinic)] <- "tripler"
 table(appts$clinic)
+## TODO Continue recoding clinic names
 
 ## Branch of Service
 table(appts$Branch.of.Service)
