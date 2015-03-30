@@ -140,9 +140,10 @@ appts$Reason_other_behavior[setdiff(grep("Behavior", x),
                                     grep("ADHD", x))] <- 1
 
 appts$Reason_other_unspec <- rep(0, length(x))
+reasons <- appts[, grep("Reason_", names(appts))]
 appts$Reason_other_unspec[which(rowSums(reasons) == 0)] <- 1
 
-rm(x)
+rm(x, reasons)
 
 # reasons <- appts[, 26:34]
 # rowSums(reasons)
